@@ -6,6 +6,10 @@ node {
     }
     
     stage('API Tests (PyTest)') {
+        echo 'Принудительное включение сервера...'
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "curl -k -s -u root:0penBmc -X POST -H \'Content-Type: application/json\' -d \'{\"ResetType\": \"On\"}\' https://127.0.0.1:2443/redfish/v1/Systems/system/Actions/ComputerSystem.Reset || true"'
+        sh 'sleep 5'
+        
         echo 'Запуск PyTest...'
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd ~/openbmc_pytest && python3 -m pytest test_redfish.py -v" > pytest_report.log 2>&1 || true'
     }
@@ -17,7 +21,6 @@ node {
     
     stage('Load Testing (Locust)') {
         echo 'Запуск Locust...'
-        // Добавлен флаг --host, чтобы Locust не падал
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd ~/openbmc_locust && python3 -m locust -f locustfile.py --headless -u 10 -r 2 --run-time 20s --host=https://192.168.163.153:2443" > locust_report.log 2>&1 || true'
     }
     
