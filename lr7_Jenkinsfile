@@ -17,7 +17,8 @@ node {
     
     stage('Load Testing (Locust)') {
         echo 'Запуск Locust...'
-        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd ~/openbmc_locust && python3 -m locust -f locustfile.py --headless -u 10 -r 2 --run-time 20s" > locust_report.log 2>&1 || true'
+        // Добавлен флаг --host, чтобы Locust не падал
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd ~/openbmc_locust && python3 -m locust -f locustfile.py --headless -u 10 -r 2 --run-time 20s --host=https://192.168.163.153:2443" > locust_report.log 2>&1 || true'
     }
     
     stage('Archive Results') {
