@@ -1,8 +1,8 @@
 node {
     stage('Start QEMU OpenBMC') {
         echo 'Запуск QEMU через SSH в WSL...'
-        // Убираем pkill, добавляем отключение known_hosts
-        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus && nohup qemu-system-arm -m 256 -M romulus-bmc -nographic -drive file=obmc-phosphor-image-romulus-20260908025120.static.mtd,format=raw,if=mtd -net nic -net user,hostfwd=:0.0.0.0:2222-:22,hostfwd=:0.0.0.0:2443-:443,hostfwd=udp:0.0.0.0:2623-:623,hostname=qemu > qemu_boot.log 2>&1 &"'
+        // Убираем pkill и добавляем перенаправление ввода < /dev/null
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus && nohup qemu-system-arm -m 256 -M romulus-bmc -nographic -drive file=obmc-phosphor-image-romulus-20260908025120.static.mtd,format=raw,if=mtd -net nic -net user,hostfwd=:0.0.0.0:2222-:22,hostfwd=:0.0.0.0:2443-:443,hostfwd=udp:0.0.0.0:2623-:623,hostname=qemu > qemu_boot.log 2>&1 < /dev/null &"'
         sh 'sleep 30'
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cat /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus/qemu_boot.log" > qemu_boot.log'
     }
