@@ -1,13 +1,9 @@
 node {
     stage('Start QEMU OpenBMC') {
         echo 'Запуск QEMU через SSH в WSL...'
-        // Убиваем старые процессы QEMU, чтобы не было конфликта портов
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "pkill -f qemu-system-arm || true"'
-        // Запускаем QEMU в фоне
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "cd /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus && nohup qemu-system-arm -m 256 -M romulus-bmc -nographic -drive file=obmc-phosphor-image-romulus-20260908025120.static.mtd,format=raw,if=mtd -net nic -net user,hostfwd=:0.0.0.0:2222-:22,hostfwd=:0.0.0.0:2443-:443,hostfwd=udp:0.0.0.0:2623-:623,hostname=qemu > qemu_boot.log 2>&1 &"'
-        // Ждем 30 секунд, пока OpenBMC загрузится
         sh 'sleep 30'
-        // Сохраняем лог загрузки
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "cat /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus/qemu_boot.log" > qemu_boot.log'
     }
     
@@ -23,13 +19,11 @@ node {
     
     stage('Load Testing (Locust)') {
         echo 'Реальный запуск Locust в WSL...'
-        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "cd ~/openbmc_locust && python3 -m locust -f locustfile.py --headless -u 10 -r 2 --run-time 20s --csv=locust_report > /dev/null 2>&1"'
-        // Забираем CSV отчет
-        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "cat ~/openbmc_locust/locust_report_stats.csv" > locust_report.csv || true'
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no kirill@192.168.163.153 "cd ~/openbmc_locust && python3 -m locust -f locustfile.py --headless -u 10 -r 2 --run-time 20s" > locust_report.log 2>&1'
     }
     
     stage('Archive Results') {
         echo 'Сохранение логов в артефакты Jenkins...'
-        archiveArtifacts artifacts: '*.log, *.csv', allowEmptyArchive: true
+        archiveArtifacts artifacts: '*.log', allowEmptyArchive: true
     }
 }
