@@ -1,9 +1,17 @@
 node {
-    stage('Check QEMU OpenBMC') {
-        echo 'Проверка, что OpenBMC запущен в WSL...'
-        // Просто проверяем, что порт 2443 отвечает (QEMU запущен вручную)
+    stage('Start QEMU OpenBMC') {
+        echo 'Запуск QEMU через SSH в WSL...'
+        // Убиваем старые процессы
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "pkill -f qemu-system-arm || true"'
+        
+        // Запускаем QEMU через setsid (отвязываем от SSH)
+        sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "cd /mnt/c/Users/kirill/archive/archive/openbmc/build/tmp/deploy/images/romulus && setsid qemu-system-arm -m 256 -M romulus-bmc -nographic -drive file=obmc-phosphor-image-romulus-20260908025120.static.mtd,format=raw,if=mtd -net nic -net user,hostfwd=:0.0.0.0:2222-:22,hostfwd=:0.0.0.0:2443-:443,hostfwd=udp:0.0.0.0:2623-:623,hostname=qemu > qemu_boot.log 2>&1 < /dev/null &"'
+        
+        echo 'Ожидание загрузки (40 секунд)...'
+        sh 'sleep 40'
+        
+        echo 'Проверка доступности API...'
         sh 'sshpass -p "19" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null kirill@192.168.163.153 "curl -k -s -o /dev/null -w \'%{http_code}\' https://127.0.0.1:2443/redfish/v1/ | grep 200"'
-        echo 'OpenBMC доступен!'
     }
     
     stage('API Tests (PyTest)') {
